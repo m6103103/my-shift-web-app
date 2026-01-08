@@ -2,8 +2,19 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人班表管理系統</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>排班表</title>
+    
+    <!-- PWA 與分享到主畫面設定 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="排班表">
+    <meta name="application-name" content="排班表">
+    
+    <!-- 礦工圖示 (SVG 轉 Data URI) -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231e293b'/%3E%3Cpath d='M30 40 Q50 10 70 40' fill='%23facc15'/%3E%3Ccircle cx='50' cy='55' r='20' fill='%23ffedd5'/%3E%3Cpath d='M35 55 Q35 50 40 50' stroke='%23000' fill='none'/%3E%3Cpath d='M60 55 Q65 50 65 50' stroke='%23000' fill='none'/%3E%3Cpath d='M45 65 Q50 70 55 65' stroke='%23f87171' fill='none' stroke-width='2'/%3E%3Cpath d='M75 70 L85 85 M85 70 L75 85' stroke='%2394a3b8' stroke-width='5' stroke-linecap='round'/%3E%3Crect x='78' y='75' width='4' height='15' fill='%2378350f'/%3E%3C/svg%3E">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231e293b'/%3E%3Cpath d='M30 40 Q50 10 70 40' fill='%23facc15'/%3E%3Ccircle cx='50' cy='55' r='20' fill='%23ffedd5'/%3E%3Cpath d='M35 55 Q35 50 40 50' stroke='%23000' fill='none'/%3E%3Cpath d='M60 55 Q65 50 65 50' stroke='%23000' fill='none'/%3E%3Cpath d='M45 65 Q50 70 55 65' stroke='%23f87171' fill='none' stroke-width='2'/%3E%3Cpath d='M75 70 L85 85 M85 70 L75 85' stroke='%2394a3b8' stroke-width='5' stroke-linecap='round'/%3E%3Crect x='78' y='75' width='4' height='15' fill='%2378350f'/%3E%3C/svg%3E">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM -->
@@ -15,7 +26,10 @@
     <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-        body { font-family: 'Inter', 'Microsoft JhengHei', sans-serif; }
+        body { 
+            font-family: 'Inter', 'Microsoft JhengHei', sans-serif; 
+            overscroll-behavior-y: contain; /* 避免下拉重新整理 */
+        }
         .custom-scrollbar::-webkit-scrollbar { width: 0px; height: 0px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
@@ -26,6 +40,10 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* 滿版安全區域處理 (iOS) */
+        .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+        .safe-pt { padding-top: env(safe-area-inset-top); }
     </style>
 </head>
 <body>
@@ -80,7 +98,7 @@
 
         function App() {
             const [step, setStep] = useState(0); 
-            const [scheduleName, setScheduleName] = useState('');
+            const [scheduleName, setScheduleName] = useState('排班表');
             const [shifts, setShifts] = useState([
                 { id: 'early', name: '日班', time: '07:00 - 15:00', themeIdx: 0 },
                 { id: 'mid', name: '小夜', time: '15:00 - 23:00', themeIdx: 1 },
@@ -100,7 +118,7 @@
                 const saved = localStorage.getItem('shift-scheduler-data');
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    setScheduleName(parsed.name || '');
+                    setScheduleName(parsed.name || '排班表');
                     setShifts(parsed.shifts || []);
                     setAreas(parsed.areas || []);
                     setSchedule(parsed.schedule || {});
@@ -177,7 +195,7 @@
 
             const renderOnboarding = () => (
                 <div className={`flex flex-col h-full p-6 transition-colors duration-500 ${t.bg}`}>
-                    <div className="flex gap-2 mb-8 mt-4">
+                    <div className="flex gap-2 mb-8 mt-4 safe-pt">
                         {[0, 1, 2, 3].map(i => <div key={i} className={`h-1 flex-1 rounded-full ${i <= step ? 'bg-cyan-400' : isDarkMode ? 'bg-slate-800' : 'bg-slate-200'}`}></div>)}
                     </div>
                     {step === 0 && (
@@ -207,7 +225,7 @@
                     )}
                     {step === 2 && (
                         <div className="flex-1 flex flex-col animate-in">
-                            <h2 className={`text-2xl font-bold ${t.text} mb-6`}>值班</h2>
+                            <h2 className={`text-2xl font-bold ${t.text} mb-6`}>值班區域</h2>
                             <div className="flex gap-2 mb-6">
                                 <input type="text" value={newAreaInput} onChange={(e) => setNewAreaInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setAreas([...areas, newAreaInput]), setNewAreaInput(''))} placeholder="新增區域..." className={`flex-1 ${t.inputBg} border ${t.cardBorder} rounded-lg px-4 py-3 ${t.text}`}/>
                             </div>
@@ -217,7 +235,7 @@
                     {step === 3 && (
                         <div className="flex-1 flex flex-col justify-center animate-in">
                             <h2 className={`text-2xl font-bold ${t.text} mb-4 text-center`}>準備就緒！</h2>
-                            <div className="flex justify-center mb-8"><div className="w-20 h-20 bg-cyan-500 rounded-full flex items-center justify-center text-white"><Icon name="Check" size={40} /></div></div>
+                            <div className="flex justify-center mb-8"><div className="w-20 h-20 bg-cyan-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-cyan-500/50"><Icon name="Check" size={40} /></div></div>
                             <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-full py-4 rounded-xl border ${t.cardBorder} ${t.text} flex items-center justify-center gap-3 mb-4`}>
                                 <Icon name={isDarkMode ? "Moon" : "Sun"} size={20}/>
                                 {isDarkMode ? '切換為淺色模式' : '切換為深色模式'}
@@ -225,7 +243,7 @@
                             <button onClick={() => { if(confirm('確定要清除所有資料重置嗎？')) { localStorage.clear(); window.location.reload(); } }} className={`w-full py-4 rounded-xl border border-red-500/30 text-red-500 flex items-center justify-center gap-3`}><Icon name="Trash2" size={18}/> 重置所有設定</button>
                         </div>
                     )}
-                    <div className="mt-auto flex justify-between py-4">
+                    <div className="mt-auto flex justify-between py-4 safe-pb">
                         {step > 0 && <button onClick={() => setStep(step-1)} className={t.textSub}>返回</button>}
                         <button onClick={() => step < 3 ? setStep(step+1) : setStep(4)} className="ml-auto bg-cyan-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-cyan-500/20">{step === 3 ? '完成' : '下一步'}</button>
                     </div>
@@ -243,7 +261,7 @@
                     <div className={`flex flex-col h-full ${t.bg} relative transition-colors`}>
                         <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: `linear-gradient(${t.gridColor} 1px, transparent 1px), linear-gradient(90deg, ${t.gridColor} 1px, transparent 1px)`, backgroundSize: '40px 40px' }}></div>
 
-                        <div className="relative z-10 p-4 shrink-0">
+                        <div className="relative z-10 p-4 shrink-0 safe-pt">
                             <div className={`${t.cardBg} border ${t.cardBorder} rounded-3xl p-6 shadow-xl`}>
                                 <div className="flex justify-between items-start">
                                     <div className="flex-1">
@@ -271,7 +289,7 @@
                                             <span className={`text-lg font-mono ${t.text}`}>{sConfig ? sConfig.time : '-- : --'}</span>
                                         </div>
                                         <div className="text-right">
-                                            <span className={`text-[10px] ${t.textSub} uppercase tracking-wider block`}>值班</span>
+                                            <span className={`text-[10px] ${t.textSub} uppercase tracking-wider block`}>值班區域</span>
                                             <span className={`text-lg font-bold ${sData?.area ? t.text : t.textSub}`}>{sData?.area || '--'}</span>
                                         </div>
                                     </div>
@@ -292,7 +310,7 @@
                                 ))}
                             </div>
 
-                            <div className="grid grid-cols-7 gap-2 pb-40">
+                            <div className="grid grid-cols-7 gap-2 pb-48">
                                  {Array(firstDay).fill(null).map((_, i) => <div key={`e-${i}`} />)}
                                  {Array(days).fill(null).map((_, i) => {
                                    const day = i + 1;
@@ -342,7 +360,7 @@
                             </div>
                         </div>
 
-                        <div className={`absolute bottom-0 left-0 w-full ${t.bottomBar} backdrop-blur-2xl border-t pt-4 pb-10 px-4 z-30 rounded-t-[2.5rem] shadow-2xl`}>
+                        <div className={`fixed bottom-0 left-0 w-full ${t.bottomBar} backdrop-blur-2xl border-t pt-4 pb-12 px-4 z-40 rounded-t-[2.5rem] shadow-2xl safe-pb`}>
                            <div className="flex items-center gap-3 mb-4 overflow-x-auto no-scrollbar">
                              <button onClick={() => setActiveToolId('clear')} className={`p-3 rounded-2xl transition-all border shrink-0 ${activeToolId === 'clear' ? 'bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : `${t.inputBg} ${t.textSub} border-transparent`}`}><Icon name="Eraser" size={20}/></button>
                              
@@ -377,7 +395,7 @@
 
             return (
                 <div className={`min-h-screen ${isDarkMode ? 'bg-black' : 'bg-slate-50'} flex items-center justify-center font-sans transition-colors duration-700`}>
-                    <div className={`w-full max-w-[420px] h-[100dvh] md:h-[850px] ${t.bg} md:rounded-[3.5rem] shadow-2xl overflow-hidden relative border-[10px] ${isDarkMode ? 'border-slate-900 ring-1 ring-white/10' : 'border-white ring-1 ring-black/5'} flex flex-col`}>
+                    <div className={`w-full max-w-[420px] h-[100dvh] md:h-[850px] ${t.bg} md:rounded-[3.5rem] shadow-2xl overflow-hidden relative border-x-0 md:border-[10px] ${isDarkMode ? 'border-slate-900 ring-1 ring-white/10' : 'border-white ring-1 ring-black/5'} flex flex-col`}>
                         {step < 4 ? renderOnboarding() : renderMainApp()}
                     </div>
                 </div>
